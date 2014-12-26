@@ -178,7 +178,7 @@ class APIName:
              - True (bool): record was properly updated
              - False (bool): record was not updated (error thrown)
         """
-        _found = self.find_dns_records(domain, record)
+        _found = self.find_dns_records(domain, record.content)
         if _found:
             self.delete_dns_record(domain, _found[u'record_id'])
         return self.create_dns_record(domain, record)
