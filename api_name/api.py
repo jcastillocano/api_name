@@ -19,7 +19,7 @@ API_USER = None
 # Default API token
 API_TOKEN = None
 
-class RecordConfig:
+class DNSRecord:
     """
         DNS Record model. Describes default values of a record
         in dns infraestructure, and provides a valid json describing
@@ -154,33 +154,33 @@ class APIName:
             logger.error(_msg)
         return False
 
-    def update_dns_record(self, domain, content, config):
+    def update_dns_record(self, domain, content, record):
         """
             Update a dns record for a domain given. First current record
             is deleted; later on a new one is created using create_dns_record
             * Args:
              - domain (string): valid domain from name.com
              - content (string): content of record to update
-             - config (RecordConfig): values of record items
+             - record (DNSRecord): values of record items
             * Output:
              - True (bool): record was properly updated
              - False (bool): record was not updated (error thrown)
         """
-        _found = self.find_dns_records(domain, content)
+        _found = self.find_dns_records(domain, record)
         if _found:
             self.delete_dns_record(domain, _found[u'record_id'])
-        return self.create_dns_record(domain, config)
+        return self.create_dns_record(domain, record)
 
-    def create_dns_record(self, domain, config):
+    def create_dns_record(self, domain, record):
         """
-            Create a new dns record given a RecordConfig instance.
+            Create a new dns record given a DNSRecord instance.
             * Args:
              - domain (string): valid domain from name.com
-             - config (RecordConfig): values of record items
+             - record (DNSRecord): values of record items
             * Output:
              - True (bool): record was properly created
              - False (bool): record was not created (error thown)
         """
         return self.do_request(self.base_url + "/dns/create/%s" % domain,
-            POST, config.post_data())
+            POST, record.post_data())
 
