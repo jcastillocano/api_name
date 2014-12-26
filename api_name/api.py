@@ -44,6 +44,12 @@ class DNSRecord:
         self.ttl = ttl
         self.priority = priority
 
+    def __unicode(self):
+        """
+            DNSRecord unicode representation
+        """
+        return u"%s.%s (%s)" % (self.hostname, self.domain, self.rtype)
+
     def post_data(self):
         """
             Return a valid dict for creating dns record in name API
@@ -84,6 +90,12 @@ class APIName:
         self.base_url = url
         self.headers = {'Api-Username': username, 'Api-Token': token}
 
+    def __unicode__(self):
+        """
+            APIName unicode representation
+        """
+        return u"%s (%s)" % (self.base_url, self.headers['Api-Username'])
+
     def do_request(self, url, method=GET, payload=None):
         """
             Wrapper for requests get/post methods.
@@ -97,7 +109,7 @@ class APIName:
         """
         params = {'headers': self.headers}
         if payload:
-            params['json'] = dumps(payload)
+            params['data'] = dumps(payload)
         response = METHODS[method](url, **params)
         if response and response.status_code == 200:
             return response
