@@ -6,17 +6,20 @@ Python API for name.com API v2 beta http://www.name.com/reseller
 Installation
 -----------------------
 
-You can install this package either pip or setup.py:
+You can install this package either pip or downloading it:
 
  * pip install git+https://github.com/jccastillocano/api_name.git
- * python setup.py install
+ * ```wget https://github.com/jccastillocano/api_name/archive/master.zip &&
+   gzip master.zip && cd api_name && python setup.py install```
 
 Configuration
 -----------------------
 
-You dont need any config file; only supply <username> and <api_token> when
+You dont need any config file; only supply *username* and *api_token* when
 instance an API class in init method. Also you can use API dev version
 if you supply api dev url.
+
+> api = APIName(username='foo', api_token='1234bar')
 
 Notes
 -----------------------
