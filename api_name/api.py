@@ -1,4 +1,3 @@
-#! /usr/bin/python
 # -*- encoding:utf8 -*-
 
 from requests import get, post
@@ -44,7 +43,7 @@ class DNSRecord:
         self.ttl = ttl
         self.priority = priority
 
-    def __unicode(self):
+    def __unicode__(self):
         """
             DNSRecord unicode representation
         """
@@ -78,7 +77,8 @@ class APIName:
          * delete_dns_record
          * update_dns_record
          * create_dns_record
-         * do_request
+        Private methods:
+         * _do_request
     """
 
     conn = None
@@ -96,7 +96,7 @@ class APIName:
         """
         return u"%s (%s)" % (self.base_url, self.headers['Api-Username'])
 
-    def do_request(self, url, method=GET, payload=None):
+    def _do_request(self, url, method=GET, payload=None):
         """
             Wrapper for requests get/post methods.
             This method takes care of requests errors.
@@ -129,10 +129,12 @@ class APIName:
              - None: if find_content was given and no record was found or error
              - records (Array): list of domain dns records
         """
-        _result = self.do_request(self.base_url + "/dns/list/%s" % domain)
+        _result = self._do_request(self.base_url + "/dns/list/%s" % domain)
         if _result:
             records = []
+            print "Content:", _result.content
             _data = loads(_result.content)
+            print "Data:", _data
             for row in _data[u'records']:
                 _rec = {'id': row[u'record_id'], 'content': row[u'content']}
                 if find_content and _rec['content'] == find_content:
@@ -156,7 +158,7 @@ class APIName:
              - True (bool): record was deleted
              - False (bool): there was an error in process
         """
-        _result = self.do_request(self.base_url + "/dns/delete/%s" % domain,
+        _result = self._do_request(self.base_url + "/dns/delete/%s" % domain,
             POST, {'record_id': record_id})
         if _result:
             response = loads(_result.content)
@@ -165,6 +167,19 @@ class APIName:
             _msg = response['result']['message']
             logger.error(_msg)
         return False
+
+    def create_dns_record(self, domain, record):
+        """
+            Create a new dns record given a DNSRecord instance.
+            * Args:
+             - domain (string): valid domain from name.com
+             - record (DNSRecord): values of record items
+            * Output:
+             - True (bool): record was properly created
+             - False (bool): record was not created (error thown)
+        """
+        return self._do_request(self.base_url + "/dns/create/%s" % domain,
+            POST, record.post_data())
 
     def update_dns_record(self, domain, content, record):
         """
@@ -183,19 +198,6 @@ class APIName:
             self.delete_dns_record(domain, _found[u'record_id'])
         return self.create_dns_record(domain, record)
 
-    def create_dns_record(self, domain, record):
-        """
-            Create a new dns record given a DNSRecord instance.
-            * Args:
-             - domain (string): valid domain from name.com
-             - record (DNSRecord): values of record items
-            * Output:
-             - True (bool): record was properly created
-             - False (bool): record was not created (error thown)
-        """
-        return self.do_request(self.base_url + "/dns/create/%s" % domain,
-            POST, record.post_data())
-
     def get_domain(self, domain, check=True):
         """
             Retrieve domain info (creation and expire dates, locked,
@@ -208,7 +210,7 @@ class APIName:
              - True (bool): domain was found (check = True)
              - Response (request.Response): domain was found (check = False)
         """
-        _response = self.do_request(self.base_url + "/domain/get/%s" % domain)
+        _response = self._do_request(self.base_url + "/domain/get/%s" % domain)
         _data = loads(_response.text)
         if _data['response']['code'] != 100:
             return False
