@@ -178,7 +178,7 @@ class APIName:
              - True (bool): record was properly updated
              - False (bool): record was not updated (error thrown)
         """
-        _found = self.find_dns_records(domain, record.content)
+        _found = self.find_dns_records(domain, content)
         if _found:
             self.delete_dns_record(domain, _found[u'record_id'])
         return self.create_dns_record(domain, record)
@@ -196,3 +196,22 @@ class APIName:
         return self.do_request(self.base_url + "/dns/create/%s" % domain,
             POST, record.post_data())
 
+    def get_domain(self, domain, check=True):
+        """
+            Retrieve domain info (creation and expire dates, locked,
+            nameservers, etc). Check if a domain exists by default
+            * Args:
+             - domain (string): valid domain from name.com
+             - check (bool): retrieve info or just check if exists (true)
+            * Output:
+             - False (bool): domain was not found
+             - True (bool): domain was found (check = True)
+             - Response (request.Response): domain was found (check = False)
+        """
+        _response = self.do_request(self.base_url + "/domain/get/%s" % domain)
+        _data = loads(_response.text)
+        if _data['response']['code'] != 100:
+            return False
+        if check:
+            return True
+        return _data
