@@ -10,7 +10,7 @@ You can install this package either pip or downloading it:
 
  * pip install git+https://github.com/jccastillocano/api_name.git
  * ```wget https://github.com/jccastillocano/api_name/archive/master.zip &&
-   gzip master.zip && cd api_name && python setup.py install```
+   gzip -d master.zip && unzip master.zip && cd api_name-master && python setup.py install```
 
 Configuration
 -----------------------
