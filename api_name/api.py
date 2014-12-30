@@ -4,7 +4,10 @@ from requests import get, post
 from json import loads, dumps
 import logging
 
+logging.basicConfig(level=logging.INFO)
+handler = logging.FileHandler('/tmp/apiname.log')
 logger = logging.getLogger(__name__)
+logger.addHandler(handler)
 
 # Methods allowed
 GET = 'get'
@@ -18,32 +21,36 @@ API_USER = None
 # Default API token
 API_TOKEN = None
 
-class DNSRecord:
+class DNSRecord(object):
     """
         DNS Record model. Describes default values of a record
         in dns infraestructure, and provides a valid json describing
         the record
     """
 
-    def __init__(self, domain=None, hostname=None, rtype='CNAME',
-        content=None, ttl=300, priority=None):
+    def __init__(self, domain=None, hostname=None, rtype='CNAME', content=None,
+            ttl=300, priority=None, record_id=None, create_date=None):
         """
             Instance a DNS Record with its default values
+             * record_id (string) = unique record id
              * domain (string) = Record domain (Null)
              * hostname (string) = Subdomain (Null)
              * rtype (string) = Type of record (CNAME)
              * content (string) = Record content: elb name, IP, etc (Null)
              * ttl (int) = Default TTL (300)
              * priority (int) = Default priority (Null)
+             * create_date (date) = Record created date
         """
+        self.record_id = record_id
         self.domain = domain
         self.hostname = hostname
         self.rtype = rtype
         self.content = content
         self.ttl = ttl
         self.priority = priority
+        self.create_date = create_date
 
-    def __unicode__(self):
+    def __str__(self):
         """
             DNSRecord unicode representation
         """
@@ -63,8 +70,27 @@ class DNSRecord:
         return {'hostname': self.hostname, 'priority': self.priority,
             'content': self.content, 'ttl': self.ttl, 'type': self.rtype}
 
+    @staticmethod
+    def create_from_raw(raw_dict):
+        """
+            Creates a new DNSRecord instance given a raw dict with field values.
+            Key value map is:
+             record_id (int): unique ID
+             name (string): subdomain.domain.com
+             type (string): DNS record type (CNAME, A, MX, etc)
+             content (string): DNS record content
+             ttl (string): DNS record TTL
+             priority (string): DNS record priority
+             updated_date (string): last update record date
+            * Args
+             - raw_dict (dict): dict with key value map
+            * Outuput
+        """
+        raw_dict['rtype'] = raw_dict.pop('type') # Remap type to rtype
+        raw_dict['hostname'] = raw_dict.pop('name') # Remap name to hostname
+        return DNSRecord(**raw_dict)
 
-class APIName:
+class APIName(object):
     """
         Manage Name.com API connection.
         Features:
@@ -73,7 +99,7 @@ class APIName:
          - Delete dns records
          - Update dns records
         Public methods:
-         * find_dns_records
+         * list_dns_records
          * delete_dns_record
          * update_dns_record
          * create_dns_record
@@ -90,11 +116,33 @@ class APIName:
         self.base_url = url
         self.headers = {'Api-Username': username, 'Api-Token': token}
 
-    def __unicode__(self):
+    def __str__(self):
         """
             APIName unicode representation
         """
         return u"%s (%s)" % (self.base_url, self.headers['Api-Username'])
+
+    def _postprocess(self, response, method_name):
+        """
+            Post-process a request response, so log error
+            if they happend and return valid data
+            * Args:
+             - response (requests.Response): http response
+             - method_name (string): ancestor method (for logging)
+            * Output:
+             - data (dict): response data
+             - None: error in response
+        """
+        if response:
+            _result = loads(response.content)
+            _respdict = _result.pop('result')
+            if _respdict['code'] == 100:
+                if not _result:
+                    return True
+                return _result
+            _msg = u"Error in %s method: %s" % (method_name, _respdict['message'])
+            logger.error(_msg)
+        return False
 
     def _do_request(self, url, method=GET, payload=None):
         """
@@ -118,35 +166,40 @@ class APIName:
         logger.error(_msg)
         return None
 
-    def find_dns_records(self, domain, find_content=False):
+    def find_dns_record(self, domain, content):
+        """
+            Find a dns record from a domain given which matchs with content
+            * Args:
+             - domain (string): valid domain from name.com
+             - content (string): record content to find
+            * Output:
+             - None: No record was found or error
+             - record (DNSRecord): dns record matched
+        """
+        records = self.list_dns_records(domain)
+        for record in records:
+            if content == record['content']:
+                return record
+        return None
+
+    def list_dns_records(self, domain):
         """
             Find all dns records from a domain given or
             try to find a record which matchs with content
             * Args:
              - domain (string): valid domain from name.com
-             - find_content (string) [Optional]: record content to find
             * Output:
-             - None: if find_content was given and no record was found or error
              - records (Array): list of domain dns records
         """
         _result = self._do_request(self.base_url + "/dns/list/%s" % domain)
-        if _result:
-            records = []
-            print "Content:", _result.content
-            _data = loads(_result.content)
-            print "Data:", _data
+        _data = self._postprocess(_result, 'list_dns_records')
+        _records = []
+        if _data:
             for row in _data[u'records']:
-                _rec = {'id': row[u'record_id'], 'content': row[u'content']}
-                if find_content and _rec['content'] == find_content:
-                    return row
-                records.append(_rec)
-            # If find_content was supplied and we arrive here means that
-            # no record was found
-            if find_content:
-                return None
-            # Return dns record list
-            return records
-        return None
+                row['domain'] = domain
+                _rec = DNSRecord.create_from_raw(row)
+                _records.append(_rec)
+        return _records
 
     def delete_dns_record(self, domain, record_id):
         """
@@ -160,12 +213,9 @@ class APIName:
         """
         _result = self._do_request(self.base_url + "/dns/delete/%s" % domain,
             POST, {'record_id': record_id})
-        if _result:
-            response = loads(_result.content)
-            if response['result']['code'] == 100:
-                return True
-            _msg = response['result']['message']
-            logger.error(_msg)
+        _data = self._postprocess(_result, 'delete_dns_record')
+        if _data:
+            return True
         return False
 
     def create_dns_record(self, domain, record):
@@ -175,11 +225,16 @@ class APIName:
              - domain (string): valid domain from name.com
              - record (DNSRecord): values of record items
             * Output:
-             - True (bool): record was properly created
+             - DNSRecord (bool): record was properly created
              - False (bool): record was not created (error thown)
         """
-        return self._do_request(self.base_url + "/dns/create/%s" % domain,
+        _result = self._do_request(self.base_url + "/dns/create/%s" % domain,
             POST, record.post_data())
+        _data = self._postprocess(_result, 'create_dns_record')
+        if _data:
+            _data['domain'] = domain
+            return DNSRecord.create_from_raw(_data)
+        return False
 
     def update_dns_record(self, domain, content, record):
         """
@@ -193,10 +248,28 @@ class APIName:
              - True (bool): record was properly updated
              - False (bool): record was not updated (error thrown)
         """
-        _found = self.find_dns_records(domain, content)
+        _found = self.find_dns_record(domain, content)
         if _found:
             self.delete_dns_record(domain, _found[u'record_id'])
         return self.create_dns_record(domain, record)
+
+    def update_nameservers(self, domain, nameservers):
+        """
+            Update nameservers, setting param list as default
+            nameservers
+            * Args:
+             - domain (string): valid domain from name.com
+             - nameservers (list): list of default nameserver
+            * Output
+             - True (bool): default nameservers updated
+             - False (bool): there was an error in process
+        """
+        _url = self.base_url + '/domain/update_nameservers/' + domain
+        _result = self._do_request(_url, POST, {'nameservers': nameservers})
+        _data = self._postprocess(_result, 'update_nameservers')
+        if _data:
+            return True
+        return False
 
     def get_domain(self, domain, check=True):
         """
@@ -211,8 +284,8 @@ class APIName:
              - Response (request.Response): domain was found (check = False)
         """
         _response = self._do_request(self.base_url + "/domain/get/%s" % domain)
-        _data = loads(_response.text)
-        if _data['response']['code'] != 100:
+        _data = self._postprocess(_response, 'get_domain')
+        if not _data:
             return False
         if check:
             return True
