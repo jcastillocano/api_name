@@ -178,7 +178,7 @@ class APIName(object):
         """
         records = self.list_dns_records(domain)
         for record in records:
-            if content == record['content']:
+            if content == record.content:
                 return record
         return None
 
