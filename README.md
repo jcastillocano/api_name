@@ -10,7 +10,7 @@ You can install this package either pip or downloading it:
 
  * pip install git+https://github.com/jccastillocano/api_name.git
  * ```wget https://github.com/jccastillocano/api_name/archive/master.zip &&
-   gzip -d master.zip && unzip master.zip && cd api_name-master && python setup.py install```
+    unzip master.zip && cd api_name-master && python setup.py install```
 
 Configuration
 -----------------------
@@ -33,3 +33,11 @@ all needs.
 This API is not complete. Only DNS methods (due to business requeriments)
 are implemented, and some domain methods. Full API implementation will be
 done in the next months.
+
+TODO
+-----------------------
+
+ * Full testing
+ * Finish Domain actions
+ * Create General, Account and Order actions
+ * Integration and examples doc
