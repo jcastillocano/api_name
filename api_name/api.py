@@ -166,6 +166,21 @@ class APIName(object):
         logger.error(_msg)
         return None
 
+    def get_dns_record(self, domain, record_id):
+        """
+            Retrieve dns record from a record_id given
+            * Args:
+             - record_id (string): valid name dns record id
+            * Output:
+             - None: No record was found or error
+             - record (DNSRecord): dns record matched
+        """
+        records = self.list_dns_records(domain)
+        for record in records:
+            if record.id == record_id:
+                return record
+        return None
+
     def find_dns_record(self, domain, content):
         """
             Find a dns record from a domain given which matchs with content
