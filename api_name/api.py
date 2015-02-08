@@ -75,6 +75,7 @@ class DNSRecord(object):
         """
             Creates a new DNSRecord instance given a raw dict with field values.
             Key value map is:
+             domain (string): record domain
              record_id (int): unique ID
              name (string): subdomain.domain.com
              type (string): DNS record type (CNAME, A, MX, etc)
