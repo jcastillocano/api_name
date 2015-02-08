@@ -161,8 +161,12 @@ class APIName(object):
         response = METHODS[method](url, **params)
         if response and response.status_code == 200:
             return response
-        _msg = u"Error %s in request %s %s: %s" % (response.status_code,
-            method.upper(), url, response.content)
+        try:
+            _msg = u"Error %s in request %s %s: %s" % (response.status_code,
+                method.upper(), url, response.content)
+        except UnicodeDecodeError:
+            _msg = u"Error %s in request %s %s: %s" % (response.status_code,
+                method.upper(), url, response.reason)
         logger.error(_msg)
         return None
 
