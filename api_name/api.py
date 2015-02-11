@@ -1,9 +1,13 @@
 # -*- encoding:utf8 -*-
 
 from requests import get, post
+from requests.exceptions import Timeout
 from json import loads, dumps
 import logging
+import time
 
+TIMEOUT_RETRY_SECONDS = 5
+MAX_TIMEOUT_RETRIES = 3
 logging.basicConfig(level=logging.INFO)
 handler = logging.FileHandler('/tmp/apiname.log')
 logger = logging.getLogger(__name__)
@@ -159,7 +163,20 @@ class APIName(object):
         params = {'headers': self.headers}
         if payload:
             params['data'] = dumps(payload)
-        response = METHODS[method](url, **params)
+
+        _attemp = 0
+        while _attemp < MAX_TIMEOUT_RETRIES:
+            try:
+                response = METHODS[method](url, **params)
+                continue
+            except Timeout:
+                logging.warn(u"Timeout error getting %s, retry...", url)
+                _attemp += 1
+                time.sleep(TIMEOUT_RETRY_SECONDS)
+        if _attemp >= MAX_TIMEOUT_RETRIES:
+            logger.error(u"Max retries getting %s", url)
+            return None
+
         if response and response.status_code == 200:
             return response
         try:
