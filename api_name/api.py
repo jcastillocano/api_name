@@ -168,7 +168,7 @@ class APIName(object):
         while _attemp < MAX_TIMEOUT_RETRIES:
             try:
                 response = METHODS[method](url, **params)
-                continue
+                break
             except Timeout:
                 logging.warn(u"Timeout error getting %s, retry...", url)
                 _attemp += 1
