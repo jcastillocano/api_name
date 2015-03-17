@@ -288,6 +288,7 @@ class APIName(object):
         _found = self.find_dns_record(domain, content)
         if _found:
             self.delete_dns_record(domain, _found.record_id)
+            time.sleep(0.4)
         return self.create_dns_record(domain, record)
 
     def update_nameservers(self, domain, nameservers):
