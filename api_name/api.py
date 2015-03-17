@@ -213,10 +213,12 @@ class APIName(object):
              - None: No record was found or error
              - record (DNSRecord): dns record matched
         """
-        records = self.list_dns_records(domain)
-        for record in records:
-            if content == record.content:
-                return record
+        _records = self.list_dns_records(domain)
+        _result = []
+        for _record in _records:
+            if content == _record.content:
+                _result.appen(_record)
+            return _result
         return None
 
     def list_dns_records(self, domain):
@@ -287,7 +289,12 @@ class APIName(object):
         """
         _found = self.find_dns_record(domain, content)
         if _found:
-            self.delete_dns_record(domain, _found.record_id)
+            if len(_found) == 1:
+                self.delete_dns_record(domain, _found[0].record_id)
+            else:
+                for _rec in _found:
+                    if _rec.hostname == record.hostname:
+                        self.delete_dns_record(domain, _rec.record_id)
             time.sleep(0.4)
         return self.create_dns_record(domain, record)
 
