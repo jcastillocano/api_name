@@ -217,7 +217,7 @@ class APIName(object):
         _result = []
         for _record in _records:
             if content == _record.content:
-                _result.appen(_record)
+                _result.append(_record)
             return _result
         return None
 
