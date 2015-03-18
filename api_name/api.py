@@ -218,8 +218,7 @@ class APIName(object):
         for _record in _records:
             if content == _record.content:
                 _result.append(_record)
-            return _result
-        return None
+        return _result
 
     def list_dns_records(self, domain):
         """
