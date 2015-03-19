@@ -1,12 +1,12 @@
 # -*- encoding:utf8 -*-
 
 from requests import get, post
-from requests.exceptions import Timeout
+from requests.exceptions import Timeout, ConnectionError
 from json import loads, dumps
 import logging
 import time
 
-TIMEOUT_RETRY_SECONDS = 5
+TIMEOUT_RETRY_SECONDS = 2
 MAX_TIMEOUT_RETRIES = 3
 logging.basicConfig(level=logging.INFO)
 handler = logging.FileHandler('/tmp/apiname.log')
@@ -169,7 +169,7 @@ class APIName(object):
             try:
                 response = METHODS[method](url, **params)
                 break
-            except Timeout:
+            except Timeout, ConnectionError:
                 logging.warn(u"Timeout error getting %s, retry...", url)
                 _attemp += 1
                 time.sleep(TIMEOUT_RETRY_SECONDS)
