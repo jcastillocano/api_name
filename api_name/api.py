@@ -170,12 +170,12 @@ class APIName(object):
                 response = METHODS[method](url, **params)
                 break
             except Timeout, ConnectionError:
-                logging.warn(u"Timeout error getting %s, retry...", url)
+                logger.warn(u"Timeout error getting %s, retry...", url)
                 _attemp += 1
                 time.sleep(TIMEOUT_RETRY_SECONDS)
-        if _attemp >= MAX_TIMEOUT_RETRIES:
-            logger.error(u"Max retries getting %s", url)
-            return None
+            if _attemp >= MAX_TIMEOUT_RETRIES:
+                logger.error(u"Max retries getting %s", url)
+                return None
 
         if response and response.status_code == 200:
             return response
