@@ -8,6 +8,7 @@ import time
 
 TIMEOUT_RETRY_SECONDS = 2
 MAX_TIMEOUT_RETRIES = 3
+MAX_DELETE_RETRIES = 3
 logging.basicConfig(level=logging.INFO)
 handler = logging.FileHandler('/tmp/apiname.log')
 logger = logging.getLogger(__name__)
@@ -145,7 +146,10 @@ class APIName(object):
                 if not _result:
                     return True
                 return _result
-            _msg = u"Error in %s method: %s" % (method_name, _respdict['message'])
+            elif _respdict['code'] == 204:
+                if method_name == 'delete_dns_record':
+                    return True
+            _msg = u"Error %s in %s method: %s" % (_respdict['code'], method_name, _respdict['message'])
             logger.error(_msg)
         return False
 
@@ -249,11 +253,20 @@ class APIName(object):
              - True (bool): record was deleted
              - False (bool): there was an error in process
         """
-        _result = self._do_request(self.base_url + "/dns/delete/%s" % domain,
-            POST, {'record_id': record_id})
-        _data = self._postprocess(_result, 'delete_dns_record')
-        if _data:
-            return True
+        _iter = 0
+        _data = False
+        while not _data:
+            _result = self._do_request(self.base_url + "/dns/delete/%s" % domain,
+                POST, {'record_id': record_id})
+            _data = self._postprocess(_result, 'delete_dns_record')
+            if _data:
+                return True
+            logger.warn('Try to delete %s record id, retrying...', record_id)
+            if _iter >= MAX_DELETE_RETRIES:
+                logger.error('Max retries deleting %s record id.', record_id)
+                break
+            sleep(1)
+            _iter += 1
         return False
 
     def create_dns_record(self, domain, record):
