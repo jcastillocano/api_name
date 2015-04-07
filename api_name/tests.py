@@ -50,6 +50,15 @@ class TestAPIName(unittest.TestCase):
             'ttl': 300, 'priority': None}
         self.assertEqual(self.record.post_data(), _result, _msg)
 
+    def test_create_from_raw(self):
+        "Test create_from_raw DNSRecord method"
+        _raw_dict = {'record_id': '1', 'name': 'www.test.com', 'type': 'CNAME',
+            'content': 'test2.com', 'ttl': 300, 'priority': None,
+            'domain': 'test.com'}
+        _record = DNSRecord.create_from_raw(_raw_dict)
+        for _fd in ['domain', 'hostname', 'content', 'record_id']:
+            self.assertEqual(getattr(self.record, _fd), getattr(_record, _fd))
+
     ####################################################################
     # APIName
     ####################################################################

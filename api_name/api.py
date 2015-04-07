@@ -173,7 +173,7 @@ class APIName(object):
             try:
                 response = METHODS[method](url, **params)
                 break
-            except Timeout, ConnectionError:
+            except (Timeout, ConnectionError):
                 logger.warn(u"Timeout error getting %s, retry...", url)
                 _attemp += 1
                 time.sleep(TIMEOUT_RETRY_SECONDS)
