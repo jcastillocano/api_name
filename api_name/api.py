@@ -265,7 +265,7 @@ class APIName(object):
             if _iter >= MAX_DELETE_RETRIES:
                 logger.error('Max retries deleting %s record id.', record_id)
                 break
-            sleep(1)
+            time.sleep(1)
             _iter += 1
         return False
 
