@@ -8,9 +8,8 @@ Installation
 
 You can install this package either pip or downloading it:
 
- * pip install git+https://github.com/jccastillocano/api_name.git
- * ```wget https://github.com/jccastillocano/api_name/archive/master.zip &&
-    unzip master.zip && cd api_name-master && python setup.py install```
+ * `pip install git+https://github.com/jccastillocano/api_name.git`
+ * `wget https://github.com/jccastillocano/api_name/archive/master.zip && unzip master.zip && cd api_name-master && python setup.py install`
 
 Configuration
 -----------------------
